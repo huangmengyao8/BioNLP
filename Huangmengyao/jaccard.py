@@ -1,13 +1,12 @@
 # -*- coding: utf-8 -*-
 """
-Created on Mon Jul 22 15:49:54 2019
+Created on Tue Jul 23 10:00:25 2019
 
 @author: huangmengyao
 """
-
 import pandas as pd
 import numpy as np
-import Levenshtein
+import jieba
 import os
 
 #设置路径
@@ -30,8 +29,21 @@ NormInput = NormInput.dropna(axis=0)
 NormInput[['real_id']]=NormInput[['real_id']].astype(int)
 NormInput = NormInput.reset_index(drop = True)
 
-#定义jaro距离函数
-def wordjaro_match(df4,df1):
+#定义Jaccard距离函数
+def Jaccrad(model,reference):#model为原句子，reference为候选句子
+    terms_reference=jieba.cut(reference)
+    terms_model=jieba.cut(model)
+    grams_reference=set(terms_reference)
+    grams_model=set(terms_model)
+    temp=0
+    for i in grams_reference:
+        if i in grams_model:
+            temp=temp+1 #交集
+    fenmu=len(grams_model)+len(grams_reference)-temp #并集
+    jaccard_coefficient=float(temp/fenmu)
+    return jaccard_coefficient
+
+def Jaccrad_match(df4,df1):
     matched_name = []           # 用来存储概率最大的匹配名称
     matched_id = []             # 用来存储概率最大的匹配id
     matched_probability = []    # 用来存储概率最大的匹配名称 对应的概率
@@ -41,7 +53,7 @@ def wordjaro_match(df4,df1):
         probability = []
         #print(word)
         for name in df4['name'].tolist(): 
-            probability.append(Levenshtein.jaro(word,name)) #word待匹配项。name词典的name
+            probability.append(Jaccrad(word,name)) #word待匹配项。name词典的name
         result.append(probability) # PD
         matched_name.append(df4['name'].tolist()[np.argmax(probability)])
         matched_id.append(df4['pre_id'].tolist()[np.argmax(probability)])
@@ -68,4 +80,4 @@ def wordjaro_match(df4,df1):
     return M4
 
 
-wordjaro_match(taxdicts,NormInput)
+Jaccrad_match(taxdicts,NormInput)
